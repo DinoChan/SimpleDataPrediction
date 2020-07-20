@@ -57,7 +57,6 @@ namespace SimpleDataPrediction
             {
                 var values = data.Skip(32).Take(6);
 
-                // y = -x*x + 2*x + 3
                 double[] X = Enumerable.Range(1, 6).Select(r => (double)r).ToArray();
                 double[] Y = values.ToArray();
 
