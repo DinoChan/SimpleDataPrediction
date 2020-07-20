@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace SimpleDataPrediction
 {
+    /// <summary>
+    /// https://bbs.csdn.net/topics/320245824
+    /// </summary>
     public class GaussNewton
     {
         public delegate double F(double[] coefficients, double x);
