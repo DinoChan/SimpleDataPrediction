@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MathNet.Numerics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ namespace SimpleDataPrediction
             {
                 FinancialFormulaTest();
                 PolynomialTest();
+                MathNetTest();
                 Console.WriteLine("Analysis completed");
             }
             catch (Exception ex)
@@ -87,6 +89,36 @@ namespace SimpleDataPrediction
             datas.SaveResultDatas(sourceDatas, "PolynomialData.txt");
         }
 
+        private static void MathNetTest()
+        {
+            var datas = new Datas();
+            var sourceDatas = datas.LoadSourceDatas();
+            foreach (var data in sourceDatas)
+            {
+                var values = data.Skip(32).Take(6);
+
+                double[] X = Enumerable.Range(1, 6).Select(r => (double)r).ToArray();
+                double[] Y = values.ToArray();
+
+                double[] parameters = Fit.Polynomial(X, Y, 2);
+
+
+                List<double> result = new List<double>();
+                for (int i = 1; i < 15; i++)
+                {
+                    result.Add(parameters[0] + parameters[1] * i + parameters[2] * i * i );
+                }
+
+                for (int i = 0; i < 8; i++)
+                {
+                    data[data.Count - 1 - i] = result[result.Count - 1 - i];
+                }
+
+                SetUnitary(data);
+            }
+
+            datas.SaveResultDatas(sourceDatas, "MathNetData.txt");
+        }
 
         private static void SetUnitary(List<double> dataToSet)
         {
