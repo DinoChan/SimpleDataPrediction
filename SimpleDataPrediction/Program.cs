@@ -68,7 +68,7 @@ namespace SimpleDataPrediction
 
                 GaussNewton gaussNewton = new GaussNewton(3);
                 gaussNewton.Initialize(Y, X, f);
-                double[] answer = gaussNewton.Coefficients;     //A=-1 B=2 C=3
+                double[] answer = gaussNewton.Coefficients;
 
                 List<double> result = new List<double>();
                 for (int i = 1; i < 15; i++)
