@@ -1,4 +1,4 @@
-以前在工作中遇到了一个数据错误的问题，顺便写下 用 [Math.Net](https://www.mathdotnet.com/) 解决的思路。
+以前在工作中遇到了一个数据错误的问题，顺便写下解决的思路。
 
 ## 1. 错误的数据
 
@@ -84,15 +84,135 @@ for (int i = 0; i < 8; i++)
 
 替换后的结果如上所示，整体符合前面数据的趋势，使用这组数据进行运算也能得到很好的结果。
 
-## 4. 最后
+## 4.  Microsoft Chart Controls 中的 FinancialFormula
+
+在上一篇文章 [使用 Math.Net 进行曲线拟合和数据预测](https://www.cnblogs.com/dino623/p/curve_fitting_and_data_prediction_using_math_net.html) 中，我介绍了如何使用 [Math.Net](https://www.mathdotnet.com/) ，这篇文章玩玩“新”花样，用古老的 Microsoft Chart Controls 实现相同的功能。
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210108153008813-1791931147.png)
+
+
+
+
+A long time ago in a galaxy far, far away... 微软推出了一套免费又强大的图表控件，它用于 WinForms 和 WebForms 中，可轻松套用各种功能强大的 2D、3D、实时变化的动态图表，头发比较少的 .NET 开发者或多或少都接触过这套图表控件。虽然现在看来多少有些落后了，但它还是很有用啊，而且还不收钱。
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103163918554-569379066.png)
+
+那么，在哪里可以找到这个图表库呢？现在微软的官网也只能找到 for Microsoft .NET Framework 3.5 的[下载](https://www.microsoft.com/en-us/download/details.aspx?id=14422)，找不到更新的版本。幸好 Visual Studio 里就自带了这个图表库，可以直接添加 `System.Windows.Forms.DataVisualization` 的引用：
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103164013349-2071652237.png)
+
+这篇我不会介绍如何做图表，而是讲讲这个图表库中的一样很有趣的东西：[FinancialFormula](https://docs.microsoft.com/zh-cn/dotnet/api/system.windows.forms.datavisualization.charting.dataformula.financialformula?view=netframework-4.8&WT.mc_id=WD-MVP-5003763)。如果只是做简单的财务数据处理，可以用它玩玩。当图表中已有其它序列（Series）的数据，DataManipulator 的 `FinancialFormula` 可以使用大部分常见的金融公式处理这些数据并产生新的数据序列。
+
+例指，`数移动平均线 `(Exponential Moving Average) 是对一段时间内的数据计算所得的平均值，它的输入和输出如下：
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103164412015-22403602.png)
+
+
+
+而`蔡金震荡` (Chaikin Oscillator) 指标是指应用于聚散的 3 天指数移动平均线与 10 天指数移动平均线之差，它的输出如下：
+
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103164418116-974773912.png)
+
+
+
+
+FinancialFormula 还有很多其它用法，具体可以参考以下两个页面：
+
+[FinancialFormula Enum (System.Windows.Forms.DataVisualization.Charting) Microsoft Docs](https://docs.microsoft.com/zh-cn/dotnet/api/system.windows.forms.datavisualization.charting.financialformula?view=netframework-4.8&WT.mc_id=WD-MVP-5003763)
+
+[Using Financial Formulas](https://origin2.cdn.componentsource.com/sites/default/files/resources/dundas/538236/WinChart2005/Formulas_HowToUseFormulas.html)
+
+## 5. 数据预测
+
+这次我用到的是`预测` (Forecasting) ，它是指使用历史观测值来预测未来值。
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103165509145-174722414.png)
+
+
+
+Forecasting公式采用四个可选参数：
+
+
+- **RegressionType**: 回归类型。使用一个数字来指示特定次数的多元回归，或者使用以下值之一指定不同的回归类型：Linear、Exponential、Logarithmic、Power。默认值为 2，与指定 Linear 等效。
+
+- **Period**: 预测时段。公式会预测此指定的未来天数内的数据变化。默认值为序列长度的一半。
+
+- **ApproxError**： 是否输出近似误差。如果设置为 false，则输出误差序列不包含相应历史数据的数据。默认值为 true。
+
+- **ForecastError**： 是否输出预测误差。如果设置为 false，并且 ApproxError 设置为 true，则输出误差序列将包含所有预测数据点的近似误差。默认值为 true。
+
+输出值有三个序列：
+
+- **Forecast**： 预测测值。
+
+- **UpperError**： 上限误差。
+
+- **LowerError**： 下限误差。
+
+
+输入参数中回归类型的具体值所代表的公式可以参考以下链接：
+
+[Time Series and Forecasting Formula](https://origin2.cdn.componentsource.com/sites/default/files/resources/dundas/538236/WinChart2005/Forecasting.html)
+
+使用 `FinancialFormula` 的代码十分简单，只需创建一个临时的 `Chart` ,插入原始数据作为一个 `Series` ，然后调用 `DataManipulator.FinancialFormula` 即可，所有代码加起来也就 30 来行：
+
+``` CS
+public double[] GetPredictData(int forecastingPoints, double[] points)
+{
+    var tempChart = new Chart();
+
+    tempChart.ChartAreas.Add(new ChartArea());
+    tempChart.ChartAreas[0].AxisX = new Axis();
+    tempChart.ChartAreas[0].AxisY = new Axis();
+    tempChart.Series.Add(new Series());
+
+    for (int i = 0; i < points.Length; i++)
+    {
+        tempChart.Series[0].Points.AddXY(i, points[i]);
+    }
+
+    var trendSeries = new Series();
+    tempChart.Series.Add(trendSeries);
+
+    var typeRegression = "Exponential";
+    var forecasting = forecastingPoints.ToString();
+    var error = "false";
+    var forecastingError = "false";
+    var parameters = typeRegression + ',' + forecasting + ',' + error + ',' + forecastingError;
+
+    tempChart.DataManipulator.FinancialFormula(FinancialFormula.Forecasting, parameters, tempChart.Series[0], trendSeries);
+
+    var result = new List<double>();
+    for (int i = 0; i < trendSeries.Points.Count; i++)
+    {
+        result.Add(trendSeries.Points[i].YValues[0]);
+    }
+
+    return result.ToArray();
+}
+```
+
+这里我使用了 `Exponential` （指数函数）作为回归类型，结果如下，看起来重复性很好，但是转折处比较生硬，导致最后在实际计算中不太理想。如果想要理想的结果，应该先尝试找出最合适的回归公式。
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210103164604420-1972719257.png)
+
+
+## 6. 最后
 
 [Math.Net](https://www.mathdotnet.com/) 是一个强大的项目，这篇文章只介绍了它所有功能的冰山一角。想了解更多可以参考官方文档，或参考博客园上的文章，例如：
 
 [【目录】开源Math.NET基础数学类库使用总目录 - 数据之巅 - 博客园](https://www.cnblogs.com/asxinyu/p/Bolg_Category_For_MathNet.html)
 
-下一篇博客，你将看到时代的眼泪。
+`FinancialFormula` 挺好玩的，但它和图表控件耦合在一起，用起来感觉有点邪门歪道，倒是通过它多少学会了一点财务公式。
 
-## 5. 参考
+话说回来当年微软的控件库都很上心嘛，现在微软都不会出这么良心的图表库了，逼我们买第三方控件。
+
+![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210108160100040-720937680.png)
+
+
+
+## 7. 参考
 
 
 [Math.NET Numerics](https://numerics.mathdotnet.com/)
@@ -103,6 +223,12 @@ for (int i = 0; i < 8; i++)
 
 [数据预测与曲线拟合 - 知乎](https://zhuanlan.zhihu.com/p/95277637)
 
-## 6. 源码
+[Time Series and Forecasting Formula](https://origin2.cdn.componentsource.com/sites/default/files/resources/dundas/538236/WinChart2005/Forecasting.html)
 
-<https://github.com/DinoChan/SimpleDataPrediction>
+[DataManipulator Class (System.Web.UI.DataVisualization.Charting) Microsoft Docs](https://docs.microsoft.com/zh-cn/dotnet/api/system.web.ui.datavisualization.charting.datamanipulator?view=netframework-4.8&WT.mc_id=WD-MVP-5003763)
+
+[DataFormula.FinancialFormula Method (System.Windows.Forms.DataVisualization.Charting) Microsoft Docs](https://docs.microsoft.com/zh-cn/dotnet/api/system.windows.forms.datavisualization.charting.dataformula.financialformula?view=netframework-4.8&WT.mc_id=WD-MVP-5003763)
+
+[FinancialFormula Enum (System.Windows.Forms.DataVisualization.Charting) Microsoft Docs](https://docs.microsoft.com/zh-cn/dotnet/api/system.windows.forms.datavisualization.charting.financialformula?view=netframework-4.8&WT.mc_id=WD-MVP-5003763)
+
+[how to generate graphs using Microsoft Chart Control ](http://www.nullskull.com/q/10352018/how-to-generate-graphs-using-microsoft-chart-control.aspx)
