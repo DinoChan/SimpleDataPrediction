@@ -86,7 +86,7 @@ for (int i = 0; i < 8; i++)
 
 ## 4.  Microsoft Chart Controls 中的 FinancialFormula
 
-在上一篇文章 [使用 Math.Net 进行曲线拟合和数据预测](https://www.cnblogs.com/dino623/p/curve_fitting_and_data_prediction_using_math_net.html) 中，我介绍了如何使用 [Math.Net](https://www.mathdotnet.com/) ，这篇文章玩玩“新”花样，用古老的 Microsoft Chart Controls 实现相同的功能。
+接下来玩玩“新”花样，用古老的 Microsoft Chart Controls 实现相同的功能。
 
 ![](https://img2020.cnblogs.com/blog/38937/202101/38937-20210108153008813-1791931147.png)
 
